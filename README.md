@@ -1,2 +1,3 @@
 # Kurtosis-Noise_level_estimation
-Noise level estimation of natural images based on Kurtosis
+Paper implementation of Noise level estimation of natural images based on Kurtosis
+for EE638: Estimation & Identification
