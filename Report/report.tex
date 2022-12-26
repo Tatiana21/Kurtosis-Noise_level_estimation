@@ -1,0 +1,173 @@
+%\title{\bf Noise Level Estimation for Natural Images
+%Based on Scale-Invariant Kurtosis and
+%Piecewise Stationarity}
+%\author{Project Report EE 638: Estimation \& Identification
+%\and \em Tanya Choudhary - 150070033}
+%\date{}
+
+\documentclass[11pt]{article}
+\usepackage{geometry} % to change the page dimensions
+\geometry{a4paper} % or letterpaper (US) or a5paper or....
+\usepackage[shortlabels]{enumitem}
+\pagenumbering{gobble}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{hyperref}
+\usepackage{float}
+%\usepackage{ulem}
+%\usepackage[labelfont=bf]{caption}
+\usepackage{graphicx}
+\graphicspath{ {Figures/} }
+%\usepackage[margin=0.5in]{geometry}
+%\usepackage{fancyhdr} 
+%\pagestyle{fancy}
+\let\oldnorm\norm   % <-- Store original \norm as \oldnorm
+\let\norm\undefined % <-- "Undefine" \norm
+\DeclarePairedDelimiter\norm{\lVert}{\rVert}
+
+\begin{document}
+\begin{titlepage}
+	\centering
+	\includegraphics[width=0.15\textwidth]{IITBlogo.png}\par\vspace{1cm}
+	{\scshape\LARGE EE 638: Estimation \& Identification \par}
+	\vspace{1cm}
+	{\scshape\Large Project Report\par}
+	\vspace{1.5cm}
+	{\huge\bfseries Noise Level Estimation for Natural Images\\ Based on Scale-Invariant Kurtosis and\\ Piecewise Stationarity \par}
+	\vspace{2cm}
+	{\Large\itshape Tanya Choudhary\par}
+
+	\vfill
+
+% Bottom of the page
+	{\large \today\par}
+\end{titlepage}
+\section{Introduction}
+Most of the existing denoising schemes assume the availability of the noise level beforehand. Unfortunately in practice it is not known. Thus estimation of it is an important step in all applications.
+Estimating noise level from a single image is an ill-posed problem due to the insufficient prior information of noise. The noise is commonly assumed with certain parametric model. The noise level estimation problem then becomes to blindly infer the parameters associated with the predetermined model. The paper \cite{dong} implemented uses kurtosis to estimate noise level. It takes into account the piecewise-stationarity of natural images. And based on that derives an algorithm to estimate the noise level which optimally fits the generalized kurtosis model.
+
+\section{Kurtosis}
+Kurtosis is a high-order statistical quantity employed for statistical analysis of natural images. For a random variable X it is defined as,
+ $$\kappa(X) = \frac{C_4(X)}{C_2^2(X)}$$
+where $C_k$ is the $k^{th}$ cumulant function. Kurtosis measures the peakedness of a distribution. For Gaussian distribution, the kurtosis value is 0, while for a distribution more concentrated than Gaussian distribution, its kurtosis is positive and for less its negative. \\
+Kurtosis value is assumed to be constant in small non-overlapping regions of clean image, throughout all scales. That means if we separate the regions of a clean and pass them through different bandpass filters, kurtosis value remains unchanged.
+
+\section{Method}
+Noise is chosen to be i.i.d and additive in spatial domain, i.e.
+\begin{equation}
+\mathbf{y  = x + n}
+\end{equation}
+where x and y are clean and noisy vectorized image patches respectively. \textbf{n} is zero-mean, signal-independent AWGN with variance $\sigma^2_n$, which is to be estimated. To handle different noise models, estimation is performed in linear transform domain. This is because linear transforms can mix non-Gaussian noise in spatial domain to Gaussian noise in transform domain. Transformed relation is
+\begin{equation}
+\mathbf{d’_jy = d’_jx + d’_jn}
+\end{equation}
+where $d_j$ denotes the $j^{th}$ basis vector of a complete orthonormal basis matrix \textbf{D}. We take only the Gaussian case here. Due to orthonormality of \textbf{D}, noise distribution in the transformed domain too is Gaussian, $n_j \sim \mathcal{N}(0,\sigma^2)$. As $x_j$ and $n_j$ are independent, we have,
+$$\begin{aligned} \sigma _ { y _ { j } } ^ { 2 } & = \sigma _ { x _ { j } } ^ { 2 } + \sigma _ { n _ { j } } ^ { 2 } \\ 
+C _ { 4 } \left( y _ { j } \right) & = C _ { 4 } \left( x _ { j } \right) + C _ { 4 } \left( n _ { j } \right)\end{aligned}$$
+Since $C_2(x_j) = \sigma^2_{x_j} $, we have
+$$\sigma _ { y _ { j } } ^ { 4 } \kappa \left( y _ { j } \right) = \sigma _ { x _ { j } } ^ { 4 } \kappa \left( x _ { j } \right) + \sigma _ { n _ { j } } ^ { 4 } \kappa \left( n _ { j } \right)$$
+This shows the relationship between noise variance and kurtosis, $\kappa(y_j)$ can be represented as the linear combination of $\kappa(x_j)$ and $\kappa(n_j)$. Since $n_j$ follows a Gaussian distribution, $\kappa(n_j) = 0$.  Also replacing $\sigma _ { x _ { j } } ^ {2}$ with $\sigma _ { y _ { j } } ^ {2 }-\sigma _ { n _ { j } } ^ {2 }$, we have
+$$\sqrt { \kappa \left( y _ { j } \right) } = \sqrt { \kappa \left( x _ { j } \right) } - \frac { \sigma _ { n } ^ { 2 } } { \sigma _ { y _ { j } } ^ { 2 } } \sqrt { \kappa \left( x _ { j } \right) }$$
+There are two unknowns in this equation, the noise variance $\sigma_n^2$ to be be estimated and the kurtosis $\kappa(x_j)$ associated with the clean image.  To solve them the noisy image is divided into $S$ disjoint regions, each of whose clean version is associated with a constant but unknown kurtosis throughout all scales. Thus the above equation holds for each region, irrespective of scale. This it can be written as
+$$\sqrt { \kappa \left( y _ { j } ^ { i } \right) } = \sqrt { \kappa \left( x ^ { i } \right) } - \frac { \sigma _ { n } ^ { 2 } } { \sigma _ { y _ { j } ^ { i } } ^ { i } } \sqrt { \kappa \left( x ^ { i } \right) }$$
+Hence our estimation problem can be formulated as
+\begin{equation}
+\begin{aligned}
+\arg \min_{ \sigma _ { n } ^ { 2 } , \quad \left\{ \kappa \left( x ^ { i } \right) \right\} _ { i = 1 } ^ { S }} & \left\{ \sum _ { i = 1 } ^ { S } \alpha _ { i } \sum _ { j = 1 } ^ { M } \left( \sqrt { \kappa \left( y _ { j } ^ { i } \right) } - \sqrt { \kappa \left( x ^ { i } \right) } +  \frac { \sigma _ { n } ^ { 2 } } { \sigma _ { y _ { j } ^ { i } } ^ { 2 } } \sqrt { \kappa \left( x ^ { i } \right) } \right) ^ { 2 }  \right.  \\
+ & \left. - \lambda \sum _ { i = 1 } ^ { S } \sum _ { j = 1 } ^ { S } \left( \sqrt { \kappa \left( x ^ { k } \right) } - \sqrt { \kappa \left( x ^ { l } \right) } \right) ^ { 2 } \right\}  \\
+  \text { Subject to: } \kappa \left( x ^ { i } \right) &\geq \frac { 1 } { M } \sum _ { j = 1 } ^ { M } \kappa \left( y _ { j } ^ { i } \right) , \quad \text { for } i = 1,2 , \ldots , S 
+ \end{aligned}
+ \end{equation}
+The weighing factor $a_i$ is specified as 
+$$\alpha _ { i } = \frac { \sum _ { j } \kappa \left( y _ { j } ^ { i } \right) } { \sum _ { i j } \kappa \left( y _ { j } ^ { i } \right) }$$
+Weighing factor is used to assign larger weight to regions with larger kurtosis values. This is because
+these regions generally contain more meaningful information. The regularization parameter $\lambda$ is used to control the relative importance of regularization term compared to the error term, and is empirically set as 0.01 in experiments.
+
+The problem is non convex but it can be broken down into two convex sub-problems by fixing one variable and optimizing the other. This gives an iterative alternating minimization procedure. First kurtosis values are updated by solving
+\begin{equation}
+\begin{aligned}
+\arg \min_{ \quad \left\{ \kappa \left( x ^ { i } \right) \right\} _ { i = 1 } ^ { S }} &  \left\{ \sum _ { i = 1 } ^ { S } \alpha _ { i } \sum _ { j = 1 } ^ { M } \left( \sqrt { \kappa \left( y _ { j } ^ { i } \right) } - \sqrt { \kappa \left( x ^ { i } \right) } +  \frac { \sigma _ { n } ^ { 2 } } { \sigma _ { y _ { j } ^ { i } } ^ { 2 } } \sqrt { \kappa \left( x ^ { i } \right) } \right) ^ { 2 }  \right.  \\
+ & \left. - \lambda \sum _ { i = 1 } ^ { S } \sum _ { j = 1 } ^ { S } \left( \sqrt { \kappa \left( x ^ { k } \right) } - \sqrt { \kappa \left( x ^ { l } \right) } \right) ^ { 2 } \right\}  \\
+  \text { Subject to: } \kappa \left( x ^ { i } \right) &\geq \frac { 1 } { M } \sum _ { j = 1 } ^ { M } \kappa \left( y _ { j } ^ { i } \right) , \quad \text { for } i = 1,2 , \ldots , S 
+ \end{aligned}
+ \end{equation}
+Further the estimate of noise variance is updated by solving the sub-problem
+\begin{equation}
+\underset { \sigma _ { n } ^ { 2 } } { \arg \min } \sum _ { i = 1 } ^ { S } \alpha _ { i } \sum _ { j = 1 } ^ { M } \left( \sqrt { \kappa \left( y _ { j } ^ { i } \right) } - \sqrt { \hat { \kappa } \left( x ^ { i } \right) } + \frac { \sigma _ { n } ^ { 2 } } { \sigma _ { y _ { j } ^ { i } } ^ 2} \sqrt { \hat { \kappa } \left( x ^ { i } \right) } \right) ^ { 2 }
+\end{equation}
+First sub-problem is a constrained quadratic programming problem. It is solved by \texttt{quadprog} in \textsc{MATLAB}. The second subproblem can be solved to give a closed form solution
+\begin{equation}\hat { \sigma } _ { n } ^ { 2 } = \frac { \sum _ { i j } \alpha _ { i } \left( \sqrt { \hat { \kappa } \left( x ^ { i } \right) } - \sqrt { \kappa \left( y _ { j } ^ { i } \right) } \right) } { \sum _ { i j } \frac { \alpha _ { i } } { \sigma _ { y _ { j } ^ { \prime } } ^ { 2 } } \sqrt { \hat { \kappa } \left( x ^ { i } \right) } }
+\end{equation}
+This alternating update procedure is repeated until convergence of objective function.
+
+\section{K-means based image partition}
+An important pre-step to the algorithm is to determine the $S$ disjoint regions, whose clean versions is assumed to be associated with constant kurtosis. It is done as follows:
+\begin{itemize}
+\item The noisy image is uniformly partitioned in $p\times p$ non-overlapping patches, with $p=16$. 
+\item Each patch is convolved with a 2D band-pass filter $\mathbf{b_k}$ selected from $d\times d$ linear transform base. Here $k$ is the index of band-pass filters, $0 \leq k \leq d^2-1$. The response image patch can is given by 
+$$\mathbf { R } _ { k } = \mathbf { P } \otimes \mathbf { B } _ { k }$$
+where $\mathbf { R } _ { k }$ and  \textbf { P } denote the response image patch and the noisy image patch, respectively.
+\item  Kurtosis value, $\kappa \left( \mathbf { R } _ { k } \right)$ associated with each response is computed.
+\item A feature vector for image patch \textbf{P} is made:
+$$\mathbf { f } = \left[ \kappa \left( \mathbf { R } _ { 1 } \right) , \kappa \left( \mathbf { R } _ { 2 } \right) , \ldots , \kappa \left( \mathbf { R } _ { d ^ { 2 } - 1 } \right) \right] ^ { \prime }$$
+\item The feature vector \textbf{f} is then used for $K$-means algorithm to determine $S$ regions. The number of clusters, $S$, is given as a prior to the algorithm, equal to 3. 
+\end{itemize}
+
+\section{Estimation of non-Gaussian noise}
+We can relax the restriction on noise being Gaussian. Only requirement is noise to be i.i.d Gaussian in linear transform domain. This will hold, as has been proved in \cite{feller}, non-Gaussian i.i.d noise is transformed into Gaussian by linear transform domain. Once we estimate the variance in that domain, we can compute the noise parameters in spatial domain. I tested the algorithm for uniform and Laplacian noise.
+
+\subsection{Uniform Noise}
+Uniform noise model is usually encountered in quantization noise of sensed image. It follows the uniform distribution: $Z \sim \mathcal{U}(a,b)$. For the zero-mean uniform noise we have $b = -a > 0$. Thus the variance is given by
+$$\sigma_Z^2 = \frac{1}{3}\left(b\right)^2$$
+The probability density function is parameterized by $b$ alone, and its estimate can be derived as
+\begin{equation}
+\hat{b} = \sqrt{3}\hat{\sigma_Z} = \sqrt{3}\hat{\sigma_n}
+\end{equation}
+
+\subsection{Laplacian Noise}
+The Laplacian noise is a kind of heavy-tailed noise used to model some impulsive noise. For Laplacian distribution $Z \sim \mathcal{L}(0, v)$, its probability density function is defined as
+$$f _ { Z } ( z ) = \frac { 1 } { 2 v } \exp \left\{ - \frac { | z - u | } { v } \right\}$$
+The estimate of parameter $v$ can then be obtained by
+$$\hat { v } = \frac { \hat { \sigma } _ { Z } } { \sqrt { 2 } } = \frac { \hat { \sigma } _ { n } } { \sqrt { 2 } }$$
+
+\section{Experiments}
+I tested the algorithm on \texttt{lena\_gray} image. Zero-mean i.i.d Gaussian noise with different variances was added to create noisy images.  For estimation, firstly mean is subtracted from the noisy image to remove DC component. Then as descried in section 4, $S$ regions are obtained and patches belonging to each region are clustered together. I have chosen the PCA basis, same as authors for linear transformation of domain. Then for each cluster, kurtosis and variance is computed, which are fed as inputs to alternating convex minimization routine along with the weighing factors.
+
+First sub-problem is solved using \texttt{quadprog} with interior point method. Second sub-problem is computed directly using the closed form expression (6).  Estimation performance was evaluated using mean squared error (MSE) as metric. Estimated noise level is tabulated in ~\ref{table:results}. The noise added is image of range [0,255].
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|c|}
+\hline
+\textbf{Noise level} & \textbf{Gaussian} & \textbf{Uniform} & \textbf{Laplacian} \\ \hline
+\textbf{5}           & 4.77              & 4.57             & 4.98               \\ \hline
+\textbf{10}          & 9.81              & 9.69             & 9.79               \\ \hline
+\textbf{15}          & 14.87             & 14.81            & 14.76              \\ \hline
+\textbf{20}          & 19.98             & 20.18            & 19.41              \\ \hline
+\textbf{25}          & 25.28              & 25.31            & 24.30              \\ \hline
+\textbf{30}          & 30.08             & 30.14            & 28.69              \\ \hline
+\end{tabular}
+\caption{Results of estimated noise-levels}
+\label{table:results}
+\end{table}
+\vspace{-0.5cm}
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|c|}
+\hline
+\textbf{}    & \textbf{Gaussian} & \textbf{Uniform} & \textbf{Laplacian} \\ \hline
+\textbf{MSE} & 0.032             & 0.077            & 0.442              \\ \hline
+\end{tabular}
+\caption{Mean Squared error for each noise distribution}
+\label{mse}
+\end{table}
+\vspace{-0.5cm}
+\section{Conclusion and discussion}
+The assumption made by paper, that kurtosis is scale-invariant in band-pass domains and piecewise stationary in spatial domain holds true for natural images. K-means based approach adaptively partitions the image into a series of disjoint regions, each with same kurtosis. The problem of estimating noise level is efficiently cast into convex sub-problems, which are solvable iteratively. The key feature of paper is ability to handle a variety of noise types while estimating them reliably.
+%\nocite{*}
+\vspace{-0.5cm}
+\bibliographystyle{plain}
+\bibliography{ref}
+
+\end{document}
